@@ -13,7 +13,7 @@
 
 [Importing/Exporting](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
-[GraphXAPI](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
+[GraphXAPI](https://github.com/NHProductions/GraphX#GraphXAPI)
 
 [Implementation Notes & Limitations](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
