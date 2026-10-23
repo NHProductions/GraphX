@@ -5,17 +5,17 @@
 ## Table of Contents
 [Features](https://github.com/NHProductions/GraphX#Features)
 
-[Getting Started]()
+[Getting Started](https://github.com/NHProductions/GraphX#Getting-Started)
 
-[Interface & Controls]()
+[Interface & Controls](https://github.com/NHProductions/GraphX#interface--controls)
 
-[Graph Model & Statistics]()
+[Graph Model](https://github.com/NHProductions/GraphX#interface--controls)
 
-[Importing/Exporting]()
+[Importing/Exporting](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
-[GraphXAPI]()
+[GraphXAPI](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
-[Implementation Notes & Limitations]()
+[Implementation Notes & Limitations](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
 ## Features
 - Graph Canvas: Similar to Desmos, with the ability to create vertices, drag them, and pan around the canvas.
