@@ -3,12 +3,18 @@
   GraphX supports directed and undirected graphs, checking properties regarding graphs, and the ability for users to write functions that operate directly onto the graph.
 
 ## Table of Contents
-[Features]()
+[Features](https://github.com/NHProductions/GraphX#Features)
+
 [Getting Started]()
+
 [Interface & Controls]()
+
 [Graph Model & Statistics]()
+
 [Importing/Exporting]()
+
 [GraphXAPI]()
+
 [Implementation Notes & Limitations]()
 
 ## Features
