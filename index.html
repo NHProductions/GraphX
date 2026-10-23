@@ -1,0 +1,895 @@
+<head>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+        }
+        .sidePanel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 35%);
+            grid-template-rows: repeat(auto-fit, 15.5%);
+            row-gap: 3%;
+            column-gap: 25%;
+            box-sizing: border-box; 
+            padding-top: 5px; 
+            width: 10%;
+            height: 35%;
+            position: absolute;
+            top: 65%;
+            left: 0;
+            justify-content: start;
+            background-color: gray;
+            z-index: 4;
+        }
+        .sidePanel > button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            width: 100%; background-color: gray; height:100%; font-size: 2cqw; ; display: flex; align-items: center; justify-content: center; padding: 0;
+        }
+        .graphArea {
+            position: absolute;
+            top: 0%;
+            left: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(200,200,200,0.8);
+            z-index: 1;
+            background-image: 
+                linear-gradient(to right, #000000 1px, transparent 1px),
+                linear-gradient(to bottom, #000000 1px, transparent 1px);
+            background-size: 100px 100px; 
+        }
+        .infoPanel {
+            position: absolute;
+            top: 65%;
+            height: 35%;
+            left: 11%;
+            width: 45%;
+            background-color: gray;
+            z-index: 4;
+        }
+        #edgeLayer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 0;
+            
+        }
+        #edgeLayer line {
+            pointer-events: stroke;
+        }
+        .graphNode {
+            z-index: 1;
+        }
+        *[data-scrollable] {
+            max-height: 5000px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="sidePanel">
+        <button data-selectable id="newNode">+</button>
+        <button data-selectable id="deleteNode"> X </button>
+        <button data-selectable id="newBiEdge"> / </button>
+        <button data-selectable id="newEdge"> &#x2197 </button>
+        <button data-selectable id="graphInfoButton"> ? </button>
+        <button id="resetPosition" style="font-size: 2cqw"> (0,0) </button>
+        <button data-selectable id="codeEditorButton">&lt/&gt</button>
+        <button data-selectable id="importButton">{ }</button>
+    </div>
+    <div class="graphArea" id="graphArea">
+        <svg id="edgeLayer">
+                <defs>
+                    <marker id="arrowhead"
+                        markerWidth="10" markerHeight="10"
+                        refX="8" refY="5"
+                        orient="auto"
+                        markerUnits="userSpaceOnUse">
+                        <path d="M 0 0 L 30 5 L 0 10 z" fill="#222222" />
+                    </marker>
+                </defs>
+                <g id="edgeLines"></g>
+        </svg>
+    </div>
+    <div class="infoPanel" style="display: none;" id="graphInfo">
+        <h4 style="width: 100%; text-align: center;"> Graph Info </h4>
+        <div id="graphOverview" style="position: absolute; height: 80%; top: 12.5%; left: 1%; width: 20%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Overview: </p>
+            <p id="overview-vertices" style="padding-left: 5%;"> Order (Vertices): 0 </p>
+            <p id="overview-edges" style="padding-left: 5%;"> Size (Edges): 0 </p>
+            <p id="overview-type" style="padding-left: 5%;"> Type: Simple </p>
+            <p id="overview-directed" style="padding-left: 5%;"> Directed: No </p>
+        </div>
+        <div id="graphType" style="position: absolute; height: 80%; width: 20%; top: 12.5%; left: 21%; border: 2px solid black;" >
+            <p style="padding-left: 1%"> Statistics: </p>
+            <p id="stats-avgDeg" style="padding-left: 5%;"> Average Degree: 0 </p>
+            <p id="stats-aad" style="padding-left: 5%;"> Average Absolute DegDev: 0 </p>
+        </div>
+        <div id="graphType" data-scrollable style="position: absolute; height: 80%; width: 20%; top: 12.5%; left: 41%; border: 2px solid black;" >
+            <p id="stats-isolatedV" data-hasClickNodes style="padding-left: 5%;"> Isolated Vertices: {} </p>
+            <p id="stats-components" style="padding-left: 5%;"> Components: 0 </p>
+            <p id="stats-density" style="padding-left: 5%;"> Density: 0 </p>
+            <p id="stats-mindeg" style="padding-left: 5%;"> Minimum Degree: 0 </p>
+            <p id="stats-maxdeg" style="padding-left: 5%;"> Maximum Degree: 0 </p>
+        </div>
+        <div id="graphProperties" style="position: absolute; height: 80%; width: 20%; top: 12.5%; left: 61%; border: 2px solid black;" >
+            <p style="padding-left: 1%"> Properties: </p>
+            <p id="prop-sgf" style="padding-left: 5%;"> Families: --- </p>
+            <p id="prop-con" style="padding-left: 5%;"> Connected: No </p>
+            <p id="prop-cyclic" style="padding-left: 5%;"> Cyclic: No </p>
+            <p id="prop-bipartite" style="padding-left: 5%;"> Bipartite: No </p>
+            <p id="prop-tree" style="padding-left: 5%;"> Tree: No </p>
+            <p id="prop-DAG" style="padding-left: 5%;"> DAG: No </p>
+        </div>
+    </div>
+    <div class="infoPanel" id="nodeInfo" style="display: none;">
+        <h4 style="width: 100%; text-align: center;"> Node Info </h4>
+        <div id="nodeOverview" style="position: absolute; height: 80%; top: 12.5%; left: 1%; width: 30%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Identifiers: </p>
+            <input id="node-name" class="nodeInput" style="width: 60%"> </input> <label for="node-name"> Name </label> <br />
+            <input id="node-id" style="width: 60%" readonly> </input> <label for="node-id"> ID </label> <br />
+            <input type="color" class="nodeInput" id="node-color" style="width: 60%"> </input> <label for="node-color"> Color </label> <br />
+            <input id="node-pos" class="nodeInput" style="width: 60%"> </input> <label for="node-pos"> Position </label>
+        </div>
+        <div id="nodeOverview" style="position: absolute; height: 80%; top: 12.5%; left: 31%; width: 30%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Statistics: </p>
+            <p id="node-deg" style="padding-left: 5%;"> Total Degree: 0 </p>
+            <p id="node-inDeg" style="padding-left: 5%;"> In-Degree: 0 </p>
+            <p id="node-outDeg" style="padding-left: 5%;"> Out-Degree: 0 </p>
+            <p id="node-isolated" style="padding-left: 5%;"> Isolated: Yes </p>
+            <p id="node-isArtic" style="padding-left: 5%;"> Articulation Point: No </p>
+        </div>
+        <div id="nodeOverview" data-scrollable style="position: absolute; height: 80%; top: 12.5%; left: 61%; width: 38%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Neighbors: </p>
+            <p id="node-selfLoop" style="padding-left: 5%;"> Self-Loop: No </p>
+            <p id="node-recipNeighbors" style="padding-left: 5%;"> Reciprocal Neighbors: No </p>
+            <p id="node-comp" data-hasClickNodes style="padding-left: 5%;"> Component: {} </p>
+            <p id="node-neighbors" style="padding-left: 5%;"> Neighbors: {} </p>
+            <p id="node-successors" data-hasClickNodes style="padding-left: 5%;"> Successors: {} </p>
+            <p id="node-predecessors" style="padding-left: 5%;"> Predecessors: {} </p>
+        </div>
+    </div>
+    <div class="infoPanel" style="width: 60%; display: none;" id="codeEditor">
+        <h4 style="width: 100%; height: 5%; top: 0%; text-align: center;"> Custom Algorithm </h4>
+        <form>
+            <fieldset style="padding-left: 2%; width: 15%; height: 30%;">
+            <legend> Desired Output: </legend>
+            <input type="radio" id="forNodes" name="runMethod" value="forNodes" checked> </input>
+            <label for="forNodes"> For Each Node </label> <br />
+            <input type="radio" name="runMethod" id="forGraph" value="forGraph"> </input> 
+            <label for="forGraph"> For the Graph </label> <br /> 
+            <input type="radio" name="runMethod" id="transformGraph" value="transformGraph"> </input> 
+            <label for="transformGraph"> Transform </label> <br /> 
+            </fieldset>
+            
+            <textarea wrap="off" spellcheck="false" style="tab-size: 4; white-space: pre; position: absolute; left: 16%; top: 15%; width: 40%; height: 75%;" id="algorithmCode">function main(globalGraph, node) {&#10&#09console.log("Hello World!");&#10&#09return globalGraph.getDegree(node) % 3 == 0;&#10}</textarea>
+            <fieldset style="position: absolute; left: 57%; width: 22%; height: 95%; top: 5%">
+                <legend> Console: </legend>
+                <textarea style="position: absolute; tab-size: 5; left: -0%; top: -1.5%; width: 100%; height: 100%" id="algorithmConsole" readonly> </textarea>
+            </fieldset>
+            <div data-scrollable data-hasClickNodes style="position: absolute; left: 80%; top: 10%; width: 20%; height: 95%;" id="algorithmOutput"> <p> Output: </p></div>
+            <script>
+                document.getElementById("algorithmCode").addEventListener("keydown", function(e) {
+                    if (e.key !== "Tab") return;
+
+                    e.preventDefault();
+
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const indent = "     ";
+
+                    this.setRangeText(indent, start, end, "end");
+                });
+                document.getElementById("algorithmCode").addEventListener("paste", function(e) {
+                    e.preventDefault();
+
+                    const text = (e.clipboardData || window.clipboardData)
+                        .getData("text")
+                        .replace(/\r\n?/g, "\n");
+
+                    this.setRangeText(
+                        text,
+                        this.selectionStart,
+                        this.selectionEnd,
+                        "end"
+                    );
+                });
+            </script>
+        </form>
+        <button id="runAlgorithm"> Run Algorithm </button>
+        <p style="position: absolute; top: 85%"> Have questions regarding documentation? Visit <a href="https://github.com/NHProductions/GraphX/wiki"> The Wiki </a> </p>
+    </div>
+    <div class="infoPanel" style="width: 25%" id="importGraph">
+        <h4 style="width: 100%; height: 5%; top: 0%; text-align: center;"> Import/Export Graph </h4>
+        <p style="position: absolute; top: 5%; left: 2%"> Nodes </p>
+        <textarea id="importExportNodes" style="width: 90%; position: absolute; height: 10%; left: 3%; top: 15%"> {} </textarea>
+        <p style="position: absolute; top: 25%; left: 2%"> Edges </p>
+        <textarea id="importExportEdges" style="width: 90%; position: absolute; height: 20%; left: 3%; top: 35%"> {} </textarea>
+        <button id="import" style="position: absolute; width: 15%; height: 10%; left: 75%; top: 87.5%; transform: translateX(-50%);" > Import </button>
+        <button id="export" style="position: absolute; width: 15%; height: 10%; left: 25%; top: 87.5%; transform: translateX(-50%);" > Export </button>
+    </div> 
+        
+
+    <script src="graphing.js"> </script>
+    <script src="publicAPI.js"></script>
+    <script>
+        // add event listeners for the data-selectable attribute elements so things can be selected.
+        var currentSelected = null;
+        var camx = 0;
+        var camy = 0;
+
+        var isDragging = null;
+        var startX, startY;
+
+        var nodesSelected = [];
+        var currentInfoPanel = null;
+        var infoNode = null;
+        var infoPanelMode = 0;
+        function isPositionVisible(node) {
+            var camPy = document.getElementsByClassName("graphArea")[0].offsetHeight;
+            var camPx = document.getElementsByClassName("graphArea")[0].offsetWidth;
+            if (camx + camPx > node.x && node.x > camx && node.y > camy && camy + camPy > node.y) return true;
+            return false;
+        }
+        function graphAreaPositionToAbs(x, y) {
+            return [camx+x, camy+y];
+        }
+        
+        function newAlgorithmWorker() {
+            const workerSrc = publicAPI+`\n
+            self.onmessage = function (event) {
+                var {code, mode, graphCpy} = event.data;
+                graphCpy = new graph(graphCpy.nodes, graphCpy.edges);
+                console.log(code, mode, graphCpy);
+                const consoleLogs = [];
+                const logValue = value => {
+                    try {
+                    return typeof value === "string" ? value : JSON.stringify(value)
+                    }
+                    catch { return String(value);}
+                };
+                const userConsole = {
+                    log: (...args) => consoleLogs.push(
+                        args.map(logValue).join(" ")
+                    ),
+                    warn: (...args) => consoleLogs.push(
+                        "[warn] " + args.map(logValue).join(" ")
+                    ),
+                    error: (...args) => consoleLogs.push(
+                        "[error] " + args.map(logValue).join(" ")
+                    )
+                };
+                try {
+                    const main = new Function(
+                        "globalGraph", "node", "console",
+                        '"use strict"; \\n' + code +
+                        '\\n; return main(globalGraph, node, console);'
+                    );
+                    let result;
+                    if (mode == "forNodes") {
+                        result = graphCpy.nodes.map(node => ({id: node.id, value: main(graphCpy, node, userConsole)}));
+                    }
+                    else {
+                        result = main(graphCpy, undefined, userConsole);    
+                    }
+
+                    self.postMessage({ok: true, result, consoleLogs});
+                } catch (error) {
+                    self.postMessage({ok: false, error: String(error?.stack || error), consoleLogs}); 
+                }
+            }
+            `
+            const blob = new Blob([workerSrc], {
+                    type: "text/javascript"
+                });            
+            return new Worker(URL.createObjectURL(blob));
+        }
+        var currentWorker = null;
+        var currentWorkerURL = null;
+        document.getElementById("runAlgorithm").addEventListener("click", (e) => {
+            if (currentWorker) {
+                currentWorker.terminate(); currentWorker = null;
+            }
+            const code = document.getElementById("algorithmCode").value;
+            const mode = document.querySelector('input[name="runMethod"]:checked').value;
+
+            document.getElementById("algorithmConsole").value = "";
+            document.getElementById("algorithmOutput").replaceChildren();
+
+            const worker = newAlgorithmWorker();
+            currentWorker = worker;
+            const timeout = setTimeout(() => {
+                if (currentWorker != worker) return;
+                worker.terminate(); currentWorker = null;
+                document.getElementById("algorithmConsole").value += "\n Execution timed out.";
+            }, 1000*200);
+            worker.onmessage = ({data}) => {
+                if (currentWorker != worker) return;
+                clearTimeout(timeout);
+                worker.terminate();
+                currentWorker = null;
+                document.getElementById("algorithmConsole").value = data.consoleLogs.join("\n");
+                if (!data.ok) {(document.getElementById("algorithmConsole").value += "\n" + data.error); return;}
+                console.log(data);
+                if (renderAlgorithmResults(data.result,mode) === false) console.log(data.result);
+                
+            }
+            worker.onerror = event => {
+                if (currentWorker != worker) return;
+                clearTimeout(timeout);
+                worker.terminate();
+                currentWorker = null;
+                document.getElementById("algorithmConsole").value += "\n Worker Error: " + event.message;
+            }
+
+            worker.postMessage({
+                code, mode, graphCpy: globalGraph.copy()
+            });
+        });
+        function renderAlgorithmResults(r,mode) {
+            if (mode == "forNodes") {
+                var toPrint = "";
+                for (var i of r) {
+                    toPrint += `${generateNodeReference(globalGraph.nodeFromID(i.id))}: ${i.value}<br>`;
+                    globalGraph.nodes[globalGraph.nodeFromID(i.id)].annotation = `${i.value}`;
+                }
+                document.getElementById("algorithmOutput").innerHTML = toPrint;
+                reloadVisibility();
+            }
+            else if (mode == "forGraph") {
+                var toPrint = `Result: ${r}`
+                document.getElementById("algorithmOutput").innerHTML = toPrint;
+                reloadVisibility();
+            }
+            else if (mode == "transformGraph") {
+                var res = deserializeGraph(r);
+                if (res == null) return false;
+                globalGraph = res;
+                console.log(globalGraph);
+                reloadVisibility();
+            }
+        }
+        document.getElementById("importButton").addEventListener("click", (e) => {
+            currentInfoPanel = currentInfoPanel != "importGraph" ? "importGraph" : null;
+            reloadVisibility();
+        })
+        document.getElementById("codeEditorButton").addEventListener("click", (e) => {
+            currentInfoPanel = currentInfoPanel != "codeEditor" ? "codeEditor" : null;
+            reloadVisibility();
+        })
+        document.getElementById("resetPosition").addEventListener("click", (e) => {
+            var graphArea = document.getElementById("graphArea");
+            camx = -graphArea.clientWidth / 2 + 12.5;; camy = -graphArea.clientHeight / 2 + 12.5;; reloadVisibility();
+        })
+        document.getElementById("graphInfoButton").addEventListener("click", (e) => {
+            currentInfoPanel = currentInfoPanel != "graphInfo" ? "graphInfo" : null;
+            reloadVisibility();
+        });
+        function onSelect(event) {
+            if (currentSelected == event.target) {
+                currentSelected = null;
+                currentInfoPanel = null;
+                event.target.style.backgroundColor = "gray";
+                reloadVisibility();
+                return;
+            }
+            console.log(event);
+            nodesSelected = []
+            currentSelected = event.target;
+            var toGrayOut = document.querySelectorAll('[data-selectable]');
+            toGrayOut.forEach(i => {
+                i.style.backgroundColor = "gray";
+            });
+            currentSelected.style.backgroundColor = "white";
+            reloadVisibility();
+        }
+        document.querySelectorAll('[data-hasClickNodes]').forEach((i) => {
+            i.addEventListener('pointerdown', (ev) => {
+                if (ev.target.classList.contains('clickableNode')) {
+                    var id = ev.target.getAttribute("data-idx");
+                    nodesSelected = [];
+                    const graphArea = document.getElementById("graphArea");
+                    nodesSelected = [globalGraph.nodes[parseInt(id)]];
+                    camx = nodesSelected[0].x - graphArea.clientWidth/2 + 12.5;
+                    camy = nodesSelected[0].y - graphArea.clientHeight / 2 + 12.5;
+                    currentInfoPanel = "nodeInfo";
+                    reloadVisibility();
+                }
+            });
+            i.addEventListener('pointerover', (ev) => {
+                if (ev.target.classList.contains("clickableNode")) {
+                    
+                    var id = ev.target.getAttribute("data-idx");
+                    globalGraph.nodes.forEach((e,idx) => {
+                        document.getElementById(`${idx}`).style.boxShadow = "";
+                    });
+                    document.getElementById(`${id}`).style.boxShadow = "inset 0 0 0 2px rgba(255, 255, 255, 0.8)";
+                }
+                else {
+                    reloadVisibility();
+                }
+            });
+        });
+        function generateNodeReference(idx) {
+            return `<span class="clickableNode" style="text-decoration: underline;" data-idx=${idx}>${globalGraph.nodes[idx].name}</span>`
+        }
+        function formatSetOfNodes(arr) {
+            if (arr.length == 0) return "{}";
+            var toReturn = "{";
+            arr.toSorted((a,b) => {
+                return a.name.localeCompare(b.name);
+            }).forEach((e,i,a) => {
+                toReturn += `${generateNodeReference(globalGraph.getIdx(e))}${i != arr.length-1? ", " : ""}`;
+            })
+            return `${toReturn}}`;
+        }
+        function nodeFromElement(i) {
+            return globalGraph.nodes[i.id];
+        }
+        function loadNode(parentElement, node, idx) {
+            var newElement = document.createElement('div');
+            newElement.style.width = '25px';
+            newElement.style.height = '25px';
+            newElement.style.backgroundColor = node.color;
+            newElement.style.borderRadius = '50%'; // Makes it a perfect circle
+            newElement.style.position = 'absolute';
+            newElement.style.left = node.x-camx;
+            newElement.style.top = node.y-camy;
+            newElement.style.display = 'flex';
+            newElement.style.justifyContent = 'flex-end';
+            newElement.style.alignItems = 'flex-start';
+            newElement.id = idx.toString();
+            newElement.classList.add("graphNode");
+            var textForNode = document.createElement('p');
+            textForNode.style.position = 'absolute';
+            textForNode.style.left = '100%';
+            textForNode.style.top = '0';
+            textForNode.style.margin = '0';
+            textForNode.style.whiteSpace = 'nowrap';
+            textForNode.style.userSelect = 'none';
+            textForNode.style.color = 'white';
+            textForNode.style.textShadow = `-1px -1px 0 #000,  1px -1px 0 #000,-1px  1px 0 #000,1px  1px 0 #000`;
+            textForNode.innerHTML = node.name;
+            var annotationForNode = document.createElement('p');
+            annotationForNode.style.position = 'absolute';
+            annotationForNode.style.right = '100%';
+            annotationForNode.style.textAlign = 'right';
+            annotationForNode.style.top = '0';
+            annotationForNode.style.margin = '0';
+            annotationForNode.style.whiteSpace = 'nowrap';
+            annotationForNode.style.userSelect = 'none';
+            annotationForNode.style.color = 'white';
+            annotationForNode.style.textShadow = `-1px -1px 0 #000,  1px -1px 0 #000,-1px  1px 0 #000,1px  1px 0 #000`;
+            annotationForNode.innerHTML = node.annotation;
+            if (currentInfoPanel === "codeEditor") newElement.appendChild(annotationForNode);
+            newElement.appendChild(textForNode);
+            newElement.addEventListener("pointermove", (e) => {
+                if (isDragging == null) return;
+                if (isDragging.id != e.currentTarget.id) return;
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+                nodeFromElement(e.currentTarget).x += dx;
+                nodeFromElement(e.currentTarget).y += dy;
+                startX = e.clientX;
+                startY = e.clientY;
+                if (!isPositionVisible(nodeFromElement(e.currentTarget))) {
+                    isDragging = null;
+                }
+                reloadVisibility();
+            });
+            newElement.addEventListener("pointerdown", (e) => {
+                if (currentSelected != null) {
+                    if (currentSelected.id == "newNode") return;
+                    nodesSelected.push(nodeFromElement(e.currentTarget));
+                    if (currentSelected.id == "deleteNode") {
+                        nodesSelected = [];
+                        isDragging = null;
+                        globalGraph.removeNode(parseInt(e.currentTarget.id));
+                        console.log(globalGraph);
+                        reloadVisibility();
+                        return;
+                    }
+                    else if (currentSelected.id == "newBiEdge" && nodesSelected.length >= 2) {
+                        let A = nodesSelected[0];
+                        let B = nodesSelected[1];
+                        globalGraph.edges = globalGraph.edges.filter((n) => {
+                            if (n.A == A && n.B == B) return false;
+                            if (n.B == A && n.A == B) return false;
+                            return true;
+                        })
+                        globalGraph.edges.push(new edge(A,B));
+                        if (A !== B) globalGraph.edges.push(new edge(B,A));
+                        nodesSelected = [];
+                        reloadVisibility();
+                        return;
+                    }
+                    else if (currentSelected.id == "newEdge" && nodesSelected.length >= 2) {
+                        let A = nodesSelected[0];
+                        let B = nodesSelected[1];
+                        globalGraph.edges = globalGraph.edges.filter((n) => {
+                            if (n.A == A && n.B == B) return false;
+                            return true;
+                        })
+                        globalGraph.edges.push(new edge(A,B));
+                        nodesSelected = [];
+                        reloadVisibility();
+                        return;
+                    }
+                    else if (currentSelected.id == "graphInfoButton") {
+                        nodesSelected = [];
+                        currentInfoPanel = "nodeInfo";
+                        infoNode = nodeFromElement(e.currentTarget);
+                    }
+                    
+                }
+                if (isDragging == null) {
+                    isDragging = e.currentTarget;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    newElement.setPointerCapture(e.pointerId);
+                }
+            });
+            newElement.addEventListener("pointerup", (e) => {
+                if (isDragging == null) return;
+                if (isDragging.id != e.currentTarget.id) return;
+                isDragging = null;
+                reloadVisibility();
+            });
+            parentElement.appendChild(newElement);
+                    
+        }
+        function loadEdges() {
+            // TODO: add offsets to x when there is more than one edge from (A,B).
+            var svg = document.getElementById("edgeLines");
+            svg.replaceChildren();
+            globalGraph.edges.forEach((edge, idx) => {
+                var isBi = globalGraph.isEdgeBi(idx);
+                var A = edge.A;
+                var B = edge.B;
+
+                if (A != B) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    var ax = A.x - camx + 12.5;
+                    var ay = A.y - camy + 12.5;
+                    var bx = B.x - camx + 12.5;
+                    var by = B.y - camy + 12.5;
+                    var dx = bx - ax;
+                    var dy = by - ay;
+                    var len = Math.hypot(dx, dy);
+                    if (len === 0) return;
+
+                    var ux = dx/len;
+                    var uy = dy/len;
+                    
+                    line.setAttribute("x1", ax);
+                    line.setAttribute("y1", ay);
+                    line.setAttribute("x2", bx - ux*12.5);
+                    line.setAttribute("y2", by - uy*12.5);
+                    line.setAttribute("stroke", "#222222");
+                    line.setAttribute("stroke-width", 5);
+                    line.setAttribute("data-edgeidx", idx);
+                    if (!isBi) {
+                        line.setAttribute("marker-end", "url(#arrowhead)");
+                    }
+                    line.addEventListener("pointerdown", (e) => {
+                        if (currentSelected?.id == "deleteNode") {
+                            globalGraph.removeEdge(e.currentTarget.getAttribute("data-edgeidx"));
+                            reloadVisibility();
+                        }
+                    });
+                    svg.appendChild(line);
+                }
+                else {
+                    var shape = document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "path"
+                    );
+                    var ax = A.x - camx + 12.5;
+                    var ay = A.y - camy + 12.5;
+                    var bx = B.x - camx + 12.5;
+                    var by = B.y - camy + 12.5;
+                    var dx = bx - ax;
+                    var dy = by - ay;
+                    const d = [
+                        `M ${ax - 12.5 * 0.55} ${ay - 12.5 * 0.83}`,
+                        `C ${ax - 22} ${ay - 38}`,
+                        `${ax + 22} ${ay - 38}`,
+                        `${ax + 12.5 * 0.55} ${ay - 12.5 * 0.83}`
+                    ].join(" ");
+                    shape.setAttribute("d", d);
+                    shape.setAttribute("fill", "none");
+                    shape.setAttribute("stroke", "#222222");
+                    shape.setAttribute("stroke-width", "3");
+                    shape.setAttribute("data-edgeidx", idx);
+                    shape.setAttribute("marker-end", "url(#arrowhead)");
+                    shape.addEventListener("pointerdown", (e) => {
+                        if (currentSelected?.id == "deleteNode") {
+                            globalGraph.removeEdge(e.currentTarget.getAttribute("data-edgeidx"));
+                            reloadVisibility();
+                        }
+                    });
+                    svg.appendChild(shape);
+                }
+            });
+        }
+        function loadGraphData() {
+            var directedness = globalGraph.isDirected();
+            document.getElementById("overview-vertices").textContent = `Order (Vertices): ${globalGraph.nodes.length}`;
+            document.getElementById("overview-edges").textContent = `Size (Edges): ${globalGraph.getEdgeCount()}`;
+            document.getElementById("overview-type").textContent = `Type: ${globalGraph.getGraphType()}`;
+            document.getElementById("overview-directed").textContent = `Directed: ${directedness ? "Yes" : "No"}`;
+            document.getElementById("stats-avgDeg").textContent = `Average Degree: ${Math.round(100 * (!directedness ? globalGraph.edges.length / globalGraph.nodes.length : globalGraph.getAverageDegree(1))) / 100}`;            
+            if (directedness) {
+                document.getElementById("stats-aad").innerHTML = `Average Absolute In-DegDev: ${Math.round(100*globalGraph.getAAD(1))/100} <br /> Average Absolute Out-DegDev: ${Math.round(100*globalGraph.getAAD(2))/100}`;
+                document.getElementById("stats-mindeg").innerHTML = `Minimum In-Degree: ${globalGraph.findDegSpec(1, false)} <br /> Maximum In-Degree: ${globalGraph.findDegSpec(1, true)}`;
+                document.getElementById("stats-maxdeg").innerHTML = `Minimum Out-Degree: ${globalGraph.findDegSpec(2, false)} <br /> Maximum Out-Degree: ${globalGraph.findDegSpec(2, true)}`
+                document.getElementById("stats-density").innerHTML = `Density: ${Math.round(100*globalGraph.getDensity(true))}%`;
+                document.getElementById("prop-tree").innerHTML = `Tree: No`;
+            }
+            else {
+                document.getElementById("stats-aad").innerHTML = `Average Absolute DegDev: ${Math.round(100*globalGraph.getAAD(0))/100}`;
+                document.getElementById("stats-mindeg").innerHTML = `Minimum Degree: ${globalGraph.findDegSpec(0, false)/2}`;
+                document.getElementById("stats-maxdeg").innerHTML = `Maximum Degree: ${globalGraph.findDegSpec(0, true)/2}`;
+                document.getElementById("stats-density").innerHTML = `Density: ${Math.round(100*globalGraph.getDensity(false))}%`;
+                var isTree = globalGraph.isTree();
+                document.getElementById("prop-tree").innerHTML = `Tree: ${isTree == 0 ? "No" : isTree == 1 ? "Yes" : "Forest"}`;
+
+            }
+            var connectivity = globalGraph.isConnected(directedness);
+            document.getElementById("prop-con").textContent =
+                `Connected: ${connectivity}`;
+            document.getElementById("stats-components").innerHTML = `Components: ${globalGraph.getDirectedComponents().length}`;
+            document.getElementById("prop-sgf").innerHTML = `Families: `+globalGraph.getGraphSpecialTypes(directedness);
+            document.getElementById("prop-bipartite").innerHTML = `Bipartite: ${globalGraph.isBipartite() != null ? "Yes" : "No"}`;
+            document.getElementById("prop-cyclic").innerHTML = `Cyclic: ${globalGraph.isAcyclic(directedness) ? "No" : "Yes"}`
+            document.getElementById("prop-DAG").innerHTML = `DAG: ${globalGraph.edges.length == 0 || (globalGraph.isAcyclic(directedness) && directedness) ? "Yes" : "No"}`
+            document.getElementById("stats-isolatedV").innerHTML = `Isolated Vertices: ${formatSetOfNodes(globalGraph.getIsolatedNodes())}`;
+        }
+        function loadNodeInfo() {
+            /*
+            <div class="infoPanel" id="nodeInfo" style="display: none;">
+        <h4 style="width: 100%; text-align: center;"> Node Info </h4>
+        <div id="nodeOverview" style="position: absolute; height: 80%; top: 12.5%; left: 1%; width: 30%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Identifiers: </p>
+            <input id="node-name" style="padding-left:5%;width: 60%"> </input> <label for="node-name"> Name </label> <br />
+            <input id="node-id" style="padding-left:5%;width: 60%"> </input> <label for="node-id"> ID </label> <br />
+            <input type="color" id="node-color" style="padding-left:5%;width: 60%"> </input> <label for="node-color"> Color </label> <br />
+            <input id="node-pos" style="padding-left:5%;width: 60%"> </input> <label for="node-pos"> Position </label>
+        </div>
+        <div id="nodeOverview" style="position: absolute; height: 80%; top: 12.5%; left: 31%; width: 30%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Statistics: </p>
+            <p id="node-deg" style="padding-left: 5%;"> Total Degree: 0 </p>
+            <p id="node-inDeg" style="padding-left: 5%;"> In-Degree: 0 </p>
+            <p id="node-outDeg" style="padding-left: 5%;"> Out-Degree: 0 </p>
+            <p id="node-isolated" style="padding-left: 5%;"> Isolated: Yes </p>
+            <p id="node-isArtic" style="padding-left: 5%;"> Articulation Point: No </p>
+            <p id="node-isBridge" style="padding-left: 5%;"> Bridge: No </p>
+        </div>
+        <div id="nodeOverview" data-scrollable style="position: absolute; height: 80%; top: 12.5%; left: 61%; width: 38%; border: 2px solid black; ">
+            <p style="padding-left: 2%"> Neighbors: </p>
+            <p id="node-selfLoop" style="padding-left: 5%;"> Self-Loop: No </p>
+            <p id="node-recipNeighbors" style="padding-left: 5%;"> Reciprocal Neighbors: No </p>
+            <p id="node-comp" style="padding-left: 5%;"> Component: {} </p>
+            <p id="node-neighbors" style="padding-left: 5%;"> Neighbors: {} </p>
+            <p id="node-successors" style="padding-left: 5%;"> Successors: {} </p>
+            <p id="node-predecessors" style="padding-left: 5%;"> Predecessors: {} </p>
+        </div>
+    </div>
+            */
+            if (infoNode == null) return;
+            var currentNode = infoNode;
+            var isDirected = globalGraph.isDirected();
+            document.getElementById("node-name").value = currentNode.name;
+            document.getElementById("node-id").value = currentNode.id;
+            document.getElementById("node-color").value = currentNode.color;
+            document.getElementById("node-pos").value = `(${currentNode.x}, ${currentNode.y})`;
+            document.getElementById("node-deg").innerHTML = `Degree: ${globalGraph.getDegree(globalGraph.getIdx(currentNode))}`;
+            document.getElementById("node-inDeg").innerHTML = `In-Degree: ${globalGraph.getVertexInDegree(globalGraph.getIdx(currentNode))}`;
+            document.getElementById("node-outDeg").innerHTML = `Out-Degree: ${globalGraph.getVertexOutDegree(globalGraph.getIdx(currentNode))}`;
+            document.getElementById("node-isolated").innerHTML = `Isolated: ${globalGraph.isNodeIsolated(currentNode) ? "Yes" : "No"}`;
+            document.getElementById("node-isArtic").innerHTML = `Articulation Point: ${globalGraph.isNodeArticulationPt(currentNode, isDirected) ? "Yes" : "No"}`;
+            document.getElementById("node-selfLoop").innerHTML = `Self Loop: ${globalGraph.nodeHasSelfLoop(currentNode) ? "Yes" : "No"}`;
+            var components = globalGraph.getDirectedComponents();
+            var currentComponent = null;
+            for (var e of components) {
+                if (e.includes(currentNode)) {currentComponent = e; break;}
+            }
+            document.getElementById("node-comp").innerHTML = `Component: ${currentComponent == null ? "{}" : formatSetOfNodes(currentComponent)}`;
+            document.getElementById("node-neighbors").innerHTML = `Neighbors: ${formatSetOfNodes(globalGraph.getBiNeighbors(currentNode))}`;
+            document.getElementById("node-successors").innerHTML = `Successors: ${formatSetOfNodes(globalGraph.getSuccessors(currentNode))}`;
+            document.getElementById("node-predecessors").innerHTML = `Predecessors: ${formatSetOfNodes(globalGraph.getPredecessors(currentNode))}`;
+            document.getElementById("node-recipNeighbors").innerHTML = `Reciprocal Neighbors: ${formatSetOfNodes(globalGraph.getRecipNeighbors(currentNode))}`;
+        }
+        Array.from(document.getElementsByClassName("nodeInput")).forEach((el) => {
+            el.addEventListener("input", (ev) => {
+                switch (ev.currentTarget.id) {
+                    case "node-name": {
+                        infoNode.name = ev.currentTarget.value;
+                        reloadVisibility();
+                        break;
+                    }
+                    case "node-color": {
+                        infoNode.color = ev.currentTarget.value;
+                        reloadVisibility();
+                        break;
+                    }
+                    case "node-pos": {
+                        // parse (x,y) as [x,y].
+                        var isValid = ev.currentTarget.value.split(",").length-1 == 1 && ev.currentTarget.value.split("(").length-1 == 1 && ev.currentTarget.value.split(")").length-1 == 1;
+                        var toFilter = ev.currentTarget.value.replace("(", "").replace(")", "").replace(",", "");
+                        var x = parseFloat(toFilter.split(" ")[0]);
+                        var y = parseFloat(toFilter.split(" ")[1]);
+                        console.log(x,y, toFilter);
+                        infoNode.x = x;
+                        infoNode.y = y;
+                        reloadVisibility();
+                        break;
+                    }
+                }
+            })
+        })
+        function reloadVisibility() {
+            
+            Array.from(document.getElementsByClassName("graphArea")[0].children).forEach((i) => {
+                    if (i.id == "edgeLayer") return;
+                    var remove = true;
+                    if (isDragging != null) {
+                        if (isDragging.id == i.id) {
+                            remove = false;
+                        }
+                    }
+                    if (remove) i.remove();
+            });
+            globalGraph.nodes.forEach((i, idx) => {
+                var dontReload = false;
+                if (isDragging != null) {
+                    if (isDragging.id == idx) dontReload = true;
+                }
+                if (isPositionVisible(i) && !dontReload) {
+                    loadNode(document.getElementsByClassName("graphArea")[0], i, idx);
+                }
+                else if (dontReload) {
+                    var n = nodeFromElement(isDragging);
+                    isDragging.style.left = n.x-camx;
+                    isDragging.style.top = n.y-camy;
+                }
+
+            });
+            Array.from(document.getElementsByClassName("infoPanel")).forEach((e) => {
+                e.style.display = "none";
+            });
+            if (currentInfoPanel == "graphInfo") {
+                document.getElementById("graphInfo").style.display = "flex";
+            }
+            else if (currentInfoPanel == "nodeInfo") {
+                document.getElementById("nodeInfo").style.display = "flex";
+                loadNodeInfo();
+            }
+            else if (currentInfoPanel == "codeEditor") {
+                document.getElementById("codeEditor").style.display = "block";
+            }
+            else if (currentInfoPanel == "importGraph") {
+                document.getElementById("importGraph").style.display = "block";
+            }
+            loadGraphData();
+            loadEdges();
+        }
+        const elements = document.querySelectorAll('[data-selectable]');
+        elements.forEach((i) => {
+            i.addEventListener('click', onSelect);
+            i.style.backgroundColor = "gray";
+        });
+        // Add event listener for clicking on graph area, so that new nodes can spawn when clicked.
+        document.getElementsByClassName("graphArea")[0].addEventListener("click", (event) => {
+            if (currentSelected != null) {
+                if (currentSelected.id == "newNode") {
+                    var cords = graphAreaPositionToAbs(event.clientX, event.clientY);
+                    const rect = document.getElementsByClassName("graphArea")[0].getBoundingClientRect();
+
+                    // Subtract the div's left/top position from the mouse's viewport position
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    if (x > 0 && y > 0) {
+                        globalGraph.nodes.push(new graphNode(0, camx+x,camy+y, String(currentNameIdx)));
+                        currentNameIdx++;
+                        reloadVisibility();
+                    }
+                }
+            }
+        });
+        document.getElementsByClassName("graphArea")[0].addEventListener("pointerdown", (e) => {
+            if (isDragging == null) {
+                isDragging = e.currentTarget;
+                startX = e.clientX;
+                startY = e.clientY;
+                graphArea.setPointerCapture(e.pointerId);
+            }
+            
+        });
+        document.getElementsByClassName("graphArea")[0].addEventListener("pointermove", (e) => {
+            if (isDragging == null) return;
+            if (isDragging.id != "graphArea") return;
+            var dx = e.clientX - startX;
+            var dy = e.clientY - startY;
+            camx -= dx;
+            camy -= dy;
+            startX = e.clientX;
+            startY = e.clientY;
+            reloadVisibility();
+        })
+        var nodeImportPanel = document.getElementById("importExportNodes");
+        var edgeImportPanel = document.getElementById("importExportEdges");
+        document.getElementById("import").addEventListener("click", (e) => {
+            var nodeArray = JSON.parse(nodeImportPanel.value);      
+            var edgeDict = JSON.parse(edgeImportPanel.value);
+            console.log(edgeDict); 
+            globalGraph = new graph([], []);
+            var radius = nodeArray.length*25;
+            var slope = 2*Math.PI/nodeArray.length;
+            for (var i of nodeArray) {
+                var newNode = new graphNode(0, radius*Math.sin(slope*globalGraph.nodes.length), radius*Math.cos(slope*globalGraph.nodes.length), i);
+                newNode.id = String(globalGraph.nodes.length);
+                globalGraph.nodes.push(newNode);
+            }
+            var findIdx = (e) => {
+                for (var i = 0; i < nodeArray.length; i++) {
+                    if (nodeArray[i] == e) return i;
+                }
+            }
+            for (var i in edgeDict) {
+                var nodeidx = findIdx(i);
+                var node = globalGraph.nodes[nodeidx];
+                for (var n of edgeDict[i]) {
+                    globalGraph.edges.push(new edge(node, globalGraph.nodes[findIdx(n)] ) );
+                }
+            }
+            console.log(globalGraph.nodes);
+            const graphArea = document.getElementById("graphArea");
+            const minX = Math.min(...globalGraph.nodes.map(n => n.x));
+            const maxX = Math.max(...globalGraph.nodes.map(n => n.x));
+            const minY = Math.min(...globalGraph.nodes.map(n => n.y));
+            const maxY = Math.max(...globalGraph.nodes.map(n => n.y));
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            camx = centerX - graphArea.clientWidth / 2 + 12.5;
+            camy = centerY - graphArea.clientHeight / 2 + 12.5;
+            console.log(camx, camy);
+            reloadVisibility();
+        });
+        document.getElementById("export").addEventListener("click", (e) => {
+            var nodestxt = "[";
+            var edgestxt = "{";
+
+            globalGraph.nodes.forEach((e,i,arr) => {
+                nodestxt += `"${e.name}"${i == arr.length-1 ? "]" : ", "}`;
+                edgestxt += `${i == 0 ? "" : ", "}"${e.name}": [`
+                globalGraph.getEdges(e).forEach((e, i, arr) => {
+                    edgestxt += `"${e.B.name}"${i == arr.length-1 ? "" : ", "}`
+                });
+                edgestxt += ']';
+            })
+            edgestxt += "}";
+            nodeImportPanel.textContent = nodestxt;
+            edgeImportPanel.textContent = edgestxt;
+            
+        })
+        document.getElementsByClassName("graphArea")[0].addEventListener("pointerup", (e) => {
+            if (isDragging == null) return;
+            if (isDragging.id != "graphArea") return;
+            isDragging = null;
+            reloadVisibility();
+        });
+
+    </script>
+</body>

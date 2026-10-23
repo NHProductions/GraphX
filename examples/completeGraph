@@ -1,0 +1,22 @@
+function main(globalGraph, node) {
+	var toRet = new graph([], []);
+	var amt = 20;
+	var radius = 500;
+	var slope = 2*Math.PI/amt;
+	for (var i = 0; i < amt; i++) {
+		var x = Math.sin(slope*i)*radius;
+		var y = Math.cos(slope*i)*radius;
+    	var toPush = new graphNode(0, x, y, String(i));
+    	toPush.id = String(i)+"P";
+	    toPush.annotation = "";
+		toPush.color = `rgb(255,0,0)`;
+		for (var f of toRet.nodes) {
+			var edgeA = new edge(toPush, f);
+			var edgeB = new edge(f, toPush);
+			toRet.edges.push(edgeA);
+			toRet.edges.push(edgeB);
+		}
+		toRet.nodes.push(toPush);
+	}
+	return toRet;
+}
