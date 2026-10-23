@@ -134,3 +134,102 @@ Edges:
 "C": ["A","B"]
 }
 ```
+This import creates C<sub>3</sub>. Imports automatically rearrange the vertices in a circle. The importer does not provide syntax correction or validation for malformed JSON. All graph names should be unique when importing.
+
+Exporting is essentially the same; clicking the "export" button makes the given graph in the format. All graph names should be unique when exporting.
+
+***Important:*** Only node names and edge relations are preserved. Colors, ids, & position are not.
+## GraphXAPI
+
+GraphX includes a javascript editor for writing custom algorithms with the graph model. Open the </> toolbar panel to access the editor.
+
+### Execution Modes
+| Mode | Description |
+| :--- | :--- |
+| For Each Node | Runs the algorithm once for each vertex, and displays the result |
+| For the Graph | Runs the algorithm once and displays 1 result. |
+| Transform | Runs the algorithm once and attempts to replace the current graph with a returned graph |
+
+The editor provides a code input, console output, and results panel.
+
+### main Function:
+```
+function main(globalGraph, node, console) {
+  // your algorithm
+  return /* -- Depends on the mode -- */
+}
+```
+Arguments:
+  - globalGraph: A copy of the graph supplied
+  - node: Current vertex in For Each Node mode; undefined in other modes.
+  - console: Console object that provides .log, .warn, and .error.
+### For Each Node - Example:
+Below is an example of the for each node mode. This algorithm returns whether each node's degree is divisible by three.
+```Javascript
+function main(globalGraph, node, console) {
+  const degree = globalGraph.getDegree(node);
+  console.log(`Node ${node.name} has degree ${degree}`
+  return degree % 3 == 0;
+}
+```
+The result of the algorithm is displayed next to each vertex, and in the results panel
+### For The Graph - Example:
+Below is an example of the For The Graph mode. This algorithm returns what % of vertices have atleast 1 vertex.
+```Javascript
+function main(globalGraph, node, console) {
+     var amt1 = 0;
+     var total = 0;
+     globalGraph.nodes.forEach((e) => {
+          total++;
+          amt1 += (globalGraph.getDegree(e) > 1)
+     });
+     return amt1/total;
+}
+```
+### Transform - Example:
+Below is an example of the transform mode. This algorithm returns K<sub>20</sub>, arranged in a circle. The transform mode expects main() to return a graph object. 
+```Javascript
+function main(globalGraph, node) {
+	var toRet = new graph([], []);
+	var amt = 20;
+	var radius = 500;
+	var slope = 2*Math.PI/amt;
+	for (var i = 0; i < amt; i++) {
+		var x = Math.sin(slope*i)*radius;
+		var y = Math.cos(slope*i)*radius;
+    	var toPush = new graphNode(0, x, y, String(i));
+    	toPush.id = String(i)+"P";
+	    toPush.annotation = "";
+		toPush.color = `rgb(255,0,0)`;
+		for (var f of toRet.nodes) {
+			var edgeA = new edge(toPush, f);
+			var edgeB = new edge(f, toPush);
+			toRet.edges.push(edgeA);
+			toRet.edges.push(edgeB);
+		}
+		toRet.nodes.push(toPush);
+	}
+	return toRet;
+}
+```
+### Execution Behavior:
+Algorithms execute in a web worker, using a copy of the graph. During execution, console messages are collected and displayed. Javascript errors are also displayed with stack info when available. If another algorithm is started while one is running, it is terminated. Execution is stopped after 200 seconds.
+
+Security Note: Only run trusted code. The execution environment is not a full security sandbox.
+
+For more information on documentation, check out the wiki page associated with this repo.
+
+## Project Structure
+GraphX/
+  - Index.html # User interface, styling, editor
+  - Graphing.js # Graph classes & operations
+  - publicAPI.js # JS embedded into the web worker
+## Notes
+Below are details that are important to keep in mind when using or extending GraphX:
+- Directedness is inferred: A graph is only directed if there is atleast 1 directed edge.
+- Undirected edges use 2 edge objects: A undirected edge between A & B is stored as [edge(A,B), edge(B,A)].
+- Graph copying is shallow: Current copy() only copies vertex positions, names, ids, colors, & edge endpoints. Annotations are not preserved.
+- Public API differs from full API: publicAPI.js does not contain every function in graphing.js.
+- Parallel Edges do not exist: Between 2 vertices, only 1 directed edge can exist. E.x if there's already (A,B) in the graph, the editor will block another edge being added.
+- Import/Export is lossy: Vertex metadata is not preserved. Just nodes and edge connections.
+- Browser compatability: Only modern browsers can run GraphX.
