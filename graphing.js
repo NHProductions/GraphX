@@ -280,14 +280,14 @@ class graph {
     getSuccessors(node) {
         var toRet = new Set([]);
         this.edges.forEach((e) => {
-            if (e.B == node) toRet.add(e.A);
+            if (e.A == node) toRet.add(e.B);
         });
         return Array.from(toRet);
     }
     getPredecessors(node) {
         var toRet = new Set([]);
         this.edges.forEach((e) => {
-            if (e.A == node) toRet.add(e.B);
+            if (e.B == node) toRet.add(e.A);
         });
         return Array.from(toRet);
     }

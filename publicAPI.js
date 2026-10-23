@@ -1,7 +1,6 @@
 var publicAPI = `
 class graphNode {
-    constructor(value,x,y,n) {
-        this.value = value;
+    constructor(x,y,n) {
         this.x = x;
         this.y = y;
         this.name = n;
@@ -152,7 +151,7 @@ class graph {
         }
         return components;
     }
-    isComplete(isDirected) {
+    isCompleteGraph(isDirected) {
         if (this.nodes.length == 0) return false;
         if (this.nodes.length == 1 && this.edges.length == 0) return true;
         for (var i of this.nodes) {
@@ -176,14 +175,14 @@ class graph {
     getSuccessors(node) {
         var toRet = new Set([]);
         this.edges.forEach((e) => {
-            if (e.B == node) toRet.add(e.A);
+            if (e.A == node) toRet.add(e.B);
         });
         return Array.from(toRet);
     }
     getPredecessors(node) {
         var toRet = new Set([]);
         this.edges.forEach((e) => {
-            if (e.A == node) toRet.add(e.B);
+            if (e.B == node) toRet.add(e.A);
         });
         return Array.from(toRet);
     }
@@ -268,7 +267,7 @@ class graph {
         })).length == this.nodes.length) return true;
         return false;
     }
-    isPath(isDirected) {
+    isPathGraph(isDirected) {
         if (this.nodes.length == 0) return false;
         if (isDirected) return false;
         if (this.nodes.length == 1) return true;
@@ -289,7 +288,7 @@ class graph {
         if (deg1Vertices == 2 && deg2Vertices == this.nodes.length-2) return true;
         return false;
     }
-    isBipartite() {
+    isBipartiteGraph() {
         const colors = new Map();
         const setA = [];
         const setB = [];
@@ -322,7 +321,7 @@ class graph {
         }
         return [setA, setB];
     }
-    isCompleteBipartite(biSet) {
+    isCompleteBipartiteGraph(biSet) {
         if (biSet == null) return false;
         let m = biSet[0].length;
         let n = biSet[1].length;
@@ -394,7 +393,7 @@ class graph {
     copy() {
         var toReturn = new graph([], []);
         this.nodes.forEach((e) => {
-            var toApp = new graphNode(0, e.x, e.y, e.name);
+            var toApp = new graphNode(e.x, e.y, e.name);
             toApp.color = e.color;
             toApp.id = e.id;
             toReturn.nodes.push(toApp);
