@@ -9,7 +9,7 @@
 
 [Interface & Controls](https://github.com/NHProductions/GraphX#interface--controls)
 
-[Graph Model](https://github.com/NHProductions/GraphX#interface--controls)
+[Graph Model](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
 [Importing/Exporting](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
 
