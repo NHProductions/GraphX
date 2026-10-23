@@ -15,7 +15,7 @@
 
 [GraphXAPI](https://github.com/NHProductions/GraphX#GraphXAPI)
 
-[Implementation Notes & Limitations](https://github.com/NHProductions/GraphX#importing--exporting-graphs)
+[Implementation Notes & Limitations](https://github.com/NHProductions/GraphX#Notes)
 
 ## Features
 - Graph Canvas: Similar to Desmos, with the ability to create vertices, drag them, and pan around the canvas.
