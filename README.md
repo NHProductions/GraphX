@@ -203,7 +203,7 @@ function main(globalGraph, node) {
 	for (var i = 0; i < amt; i++) {
 		var x = Math.sin(slope*i)*radius;
 		var y = Math.cos(slope*i)*radius;
-    	var toPush = new graphNode(0, x, y, String(i));
+    	var toPush = new graphNode(x, y, String(i));
     	toPush.id = String(i)+"P";
 	    toPush.annotation = "";
 		toPush.color = `rgb(255,0,0)`;
