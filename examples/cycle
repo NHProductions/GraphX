@@ -1,0 +1,21 @@
+function main(globalGraph, node, console) {
+	var toReturn = new graph([], []);
+	var amt = 20;
+	var slope = (Math.PI*2)/amt;
+	var radius = 500;
+	for (var i = 0; i < amt; i++) {
+		var node = new graphNode(radius*Math.sin(slope*i), radius*Math.cos(slope*i), String(i) ) ;
+		node.id = String(i)+"P";
+		toReturn.nodes.push(node);
+	}
+	for (var i = 0; i < amt; i++) {
+		var idxA = i;
+		var idxB = i == amt-1 ? 0 : i+1;
+		var e = new edge(toReturn.nodes[idxA], toReturn.nodes[idxB]);
+		var f = new edge(toReturn.nodes[idxB], toReturn.nodes[idxA]);
+		toReturn.edges.push(e);
+		toReturn.edges.push(f);
+	}
+	return toReturn;
+
+}
