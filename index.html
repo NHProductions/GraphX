@@ -401,6 +401,7 @@
                     nodesSelected = [];
                     const graphArea = document.getElementById("graphArea");
                     nodesSelected = [globalGraph.nodes[parseInt(id)]];
+                    infoNode = globalGraph.nodes[parseInt(id)];
                     camx = nodesSelected[0].x - graphArea.clientWidth/2 + 12.5;
                     camy = nodesSelected[0].y - graphArea.clientHeight / 2 + 12.5;
                     currentInfoPanel = "nodeInfo";
